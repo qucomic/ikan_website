@@ -1,0 +1,205 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>完整规则示例 · 爱看规则手册</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/ikan-logo.png"><script src="../app.js" defer></script></head><body><a class="skip-link" href="#main">跳到主要内容</a>
+<header class="site-header"><div class="container header-inner"><a class="brand" href="../index.html" aria-label="爱看首页"><img src="../assets/ikan-logo.png" alt="" width="40" height="40"><span>爱看 <small>ikan</small></span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation">菜单 <span aria-hidden="true">☰</span></button><nav id="navigation" aria-label="主导航"><a href="../index.html#features">功能</a><a href="../index.html#experience">界面一览</a><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a class="nav-download" href="../index.html#download">下载爱看 <span aria-hidden="true"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></span></a></nav></div></header>
+<main id="main"><div class="doc-hero"><div class="container"><p class="kicker">爱看 ikan · 规则手册</p><h1>完整规则示例</h1><p>根据 ikan 项目当前文档整理，适合规则作者查阅。</p></div></div><div class="container doc-layout"><nav class="doc-toc" aria-label="手册导航"><a href="../rules.html">返回规则手册</a><a href="../guide.html">使用指南</a><a href="../docs/07-examples.md" download>下载 Markdown 原文</a></nav><article class="doc-content"><h1 id="完整规则示例">完整规则示例</h1>
+<p>下面示例是结构完整、可导入的 JSON 模板。<code>example.com</code> 是占位域名，选择器也是演示结构，必须根据目标站点修改才能获取真实内容。</p>
+<h2 id="示例一最小小说规则">示例一：最小小说规则</h2>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;guide-basic-novel&quot;,
+  &quot;name&quot;: &quot;手册示例小说&quot;,
+  &quot;author&quot;: &quot;Ikan&quot;,
+  &quot;host&quot;: &quot;https://www.example.com&quot;,
+  &quot;contentType&quot;: 1,
+  &quot;enabled&quot;: true,
+  &quot;enableSearch&quot;: true,
+  &quot;searchUrl&quot;: &quot;/search?q=$keyword&amp;page=$page&quot;,
+  &quot;searchNextUrl&quot;: &quot;a.next@href&quot;,
+  &quot;searchList&quot;: &quot;.book-list .book-item&quot;,
+  &quot;searchName&quot;: &quot;.title&gt;a@text&quot;,
+  &quot;searchCover&quot;: &quot;.cover@src&quot;,
+  &quot;searchAuthor&quot;: &quot;.author@text&quot;,
+  &quot;searchDescription&quot;: &quot;.description@text&quot;,
+  &quot;searchResult&quot;: &quot;.title&gt;a@href&quot;,
+  &quot;enableDiscover&quot;: true,
+  &quot;discoverUrl&quot;: &quot;分类::全部::/list/$page\n分类::玄幻::/sort/1/$page\n排行::热门::/top/hot/$page&quot;,
+  &quot;discoverNextUrl&quot;: &quot;a.next@href&quot;,
+  &quot;discoverList&quot;: &quot;.book-list .book-item&quot;,
+  &quot;discoverName&quot;: &quot;.title&gt;a@text&quot;,
+  &quot;discoverCover&quot;: &quot;.cover@src&quot;,
+  &quot;discoverAuthor&quot;: &quot;.author@text&quot;,
+  &quot;discoverDescription&quot;: &quot;.description@text&quot;,
+  &quot;discoverResult&quot;: &quot;.title&gt;a@href&quot;,
+  &quot;enableMultiRoads&quot;: false,
+  &quot;chapterList&quot;: &quot;.chapter-list li&quot;,
+  &quot;chapterName&quot;: &quot;a@text&quot;,
+  &quot;chapterResult&quot;: &quot;a@href&quot;,
+  &quot;contentItems&quot;: &quot;#content@text&quot;
+}
+</code></pre>
+<p>说明：</p>
+<ul>
+<li><code>chapterUrl</code> 留空，目录直接请求 <code>searchResult</code> / <code>discoverResult</code> 得到的详情页。</li>
+<li><code>contentUrl</code> 留空，正文直接请求 <code>chapterResult</code>。</li>
+<li><code>searchNextUrl</code> / <code>discoverNextUrl</code> 从当前响应提取真实下一页链接。</li>
+</ul>
+<h2 id="示例二post--gbk--javascript-小说">示例二：POST + GBK + JavaScript 小说</h2>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;guide-gbk-js-novel&quot;,
+  &quot;name&quot;: &quot;手册示例 GBK 小说&quot;,
+  &quot;host&quot;: &quot;https://www.example.com&quot;,
+  &quot;contentType&quot;: &quot;novel&quot;,
+  &quot;userAgent&quot;: &quot;Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile Safari/604.1&quot;,
+  &quot;useCryptoJS&quot;: true,
+  &quot;loadJs&quot;: &quot;function cleanTitle(value) { return String(value).replace(/\\s+/g, &#39; &#39;).trim(); }\nfunction requestSign(value) { return CryptoJS.MD5(value).toString(); }&quot;,
+  &quot;enableSearch&quot;: true,
+  &quot;searchUrl&quot;: &quot;@js:\n(() =&gt; {\n  const ts = String(Date.now());\n  return {\n    url: &#39;/modules/article/search.php&#39;,\n    method: &#39;post&#39;,\n    headers: {\n      &#39;Referer&#39;: host,\n      &#39;X-Sign&#39;: requestSign(keyword + ts)\n    },\n    body: {searchkey: keyword, page: page, ts: ts},\n    requestEncoding: &#39;gbk&#39;,\n    responseEncoding: &#39;gbk&#39;\n  };\n})()&quot;,
+  &quot;searchList&quot;: &quot;.searchresult&gt;p&quot;,
+  &quot;searchName&quot;: &quot;a@text@js:cleanTitle(result)&quot;,
+  &quot;searchAuthor&quot;: &quot;.author&gt;a@text&quot;,
+  &quot;searchResult&quot;: &quot;&gt;a:nth-child(1)@href&quot;,
+  &quot;enableDiscover&quot;: false,
+  &quot;chapterList&quot;: &quot;#chapter-list li&quot;,
+  &quot;chapterName&quot;: &quot;a@text&quot;,
+  &quot;chapterResult&quot;: &quot;a@href&quot;,
+  &quot;contentNextUrl&quot;: &quot;@js:\n(() =&gt; {\n  const links = result.match(/href=\&quot;([^\&quot;]+)\&quot;[^&gt;]*&gt;下一页/);\n  return links ? links[1] : null;\n})()&quot;,
+  &quot;contentItems&quot;: &quot;#content@html&quot;
+}
+</code></pre>
+<p>关键点：</p>
+<ul>
+<li>JS 地址对象同时区分 <code>requestEncoding</code> 和 <code>responseEncoding</code>。</li>
+<li><code>loadJs</code> 函数在会话初始化时注入，其他 JS 可直接调用。</li>
+<li><code>a@text@js:cleanTitle(result)</code> 是链式 JS，对每个标题分别清理。</li>
+<li><code>contentNextUrl</code> 的 <code>result</code> 是当前正文分页 HTML。</li>
+</ul>
+<h2 id="示例三普通漫画与图片请求头">示例三：普通漫画与图片请求头</h2>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;guide-basic-manga&quot;,
+  &quot;name&quot;: &quot;手册示例漫画&quot;,
+  &quot;host&quot;: &quot;https://www.example.com&quot;,
+  &quot;contentType&quot;: 0,
+  &quot;userAgent&quot;: &quot;Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile Safari/604.1&quot;,
+  &quot;enableSearch&quot;: true,
+  &quot;searchUrl&quot;: &quot;/search?keyword=$keyword&amp;page=$page&quot;,
+  &quot;searchList&quot;: &quot;.manga-card&quot;,
+  &quot;searchName&quot;: &quot;.name@text&quot;,
+  &quot;searchCover&quot;: &quot;img@src@js:({url: result, headers: {Referer: host}})&quot;,
+  &quot;searchAuthor&quot;: &quot;.author@text&quot;,
+  &quot;searchResult&quot;: &quot;a@href&quot;,
+  &quot;enableDiscover&quot;: true,
+  &quot;discoverUrl&quot;: &quot;分类::全部::/manga/$page&quot;,
+  &quot;discoverList&quot;: &quot;.manga-card&quot;,
+  &quot;discoverName&quot;: &quot;.name@text&quot;,
+  &quot;discoverCover&quot;: &quot;img@src@js:({url: result, headers: {Referer: host}})&quot;,
+  &quot;discoverAuthor&quot;: &quot;.author@text&quot;,
+  &quot;discoverResult&quot;: &quot;a@href&quot;,
+  &quot;chapterList&quot;: &quot;#detail-list-select&gt;li&quot;,
+  &quot;chapterName&quot;: &quot;a@text&quot;,
+  &quot;chapterCover&quot;: &quot;img.chapter-cover@src@js:({url: result, headers: {Referer: host}})&quot;,
+  &quot;chapterResult&quot;: &quot;a@href&quot;,
+  &quot;contentItems&quot;: &quot;.content-img@data-src@js:\n({\n  url: result,\n  headers: {\n    &#39;Referer&#39;: host,\n    &#39;User-Agent&#39;: &#39;Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile Safari/604.1&#39;\n  }\n})&quot;
+}
+</code></pre>
+<p><code>searchCover</code>、<code>discoverCover</code>、<code>chapterCover</code> 和 <code>contentItems</code> 使用同一个 <code>{url, headers}</code> 格式。封面取第一个有效资源；<code>contentItems</code> 先取所有 <code>data-src</code>，然后对每个 URL 返回独立图片对象。</p>
+<h2 id="示例四原生-aes-cbc-漫画">示例四：原生 AES-CBC 漫画</h2>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;guide-aes-manga&quot;,
+  &quot;name&quot;: &quot;手册示例 AES 漫画&quot;,
+  &quot;host&quot;: &quot;https://www.example.com&quot;,
+  &quot;contentType&quot;: &quot;manga&quot;,
+  &quot;enableSearch&quot;: true,
+  &quot;searchUrl&quot;: &quot;/search?q=$keyword&quot;,
+  &quot;searchList&quot;: &quot;.manga-card&quot;,
+  &quot;searchName&quot;: &quot;.name@text&quot;,
+  &quot;searchCover&quot;: &quot;.cover@data-src@js:\n({\n  url: result,\n  headers: {Referer: host},\n  transform: {\n    type: &#39;aes&#39;,\n    mode: &#39;cbc&#39;,\n    key: &#39;my2ecret782ecret&#39;,\n    iv: &#39;my2ecret782ecret&#39;,\n    padding: &#39;pkcs7&#39;,\n    outputMime: &#39;image/webp&#39;\n  }\n})&quot;,
+  &quot;searchResult&quot;: &quot;a@href&quot;,
+  &quot;enableDiscover&quot;: false,
+  &quot;chapterList&quot;: &quot;#detail-list-select&gt;li&quot;,
+  &quot;chapterName&quot;: &quot;a@text&quot;,
+  &quot;chapterResult&quot;: &quot;a@href&quot;,
+  &quot;contentItems&quot;: &quot;.content-img@data-r-src@js:\n({\n  url: result,\n  headers: {\n    &#39;Referer&#39;: host,\n    &#39;User-Agent&#39;: &#39;Mozilla/5.0 ...&#39;\n  },\n  transform: {\n    type: &#39;aes&#39;,\n    mode: &#39;cbc&#39;,\n    key: &#39;my2ecret782ecret&#39;,\n    iv: &#39;my2ecret782ecret&#39;,\n    keyEncoding: &#39;utf8&#39;,\n    ivEncoding: &#39;utf8&#39;,\n    padding: &#39;pkcs7&#39;,\n    outputMime: &#39;image/webp&#39;\n  }\n})&quot;
+}
+</code></pre>
+<p>这种写法中：</p>
+<ul>
+<li>应用自己下载图片密文；</li>
+<li>响应强制按二进制处理；</li>
+<li>应用原生执行 AES-CBC/PKCS7；</li>
+<li>JS 不传输大量密文，也不需要 <code>CryptoJS</code>。</li>
+<li>同一 AES 对象既可用于封面，也可用于漫画正文图片。</li>
+</ul>
+<h2 id="示例五命名-js-字节变换">示例五：命名 JS 字节变换</h2>
+<pre><code class="language-json">{
+  &quot;id&quot;: &quot;guide-custom-image-manga&quot;,
+  &quot;name&quot;: &quot;手册示例自定义图片处理&quot;,
+  &quot;host&quot;: &quot;https://www.example.com&quot;,
+  &quot;contentType&quot;: 0,
+  &quot;loadJs&quot;: &quot;function decodeImage(context) {\n  const bytes = new Uint8Array(context.bytes);\n  const key = context.args.xorKey;\n  for (let i = 0; i &lt; bytes.length; i++) {\n    bytes[i] = bytes[i] ^ key;\n  }\n  return {bytes: Array.from(bytes), mimeType: &#39;image/webp&#39;};\n}&quot;,
+  &quot;enableSearch&quot;: false,
+  &quot;enableDiscover&quot;: false,
+  &quot;chapterList&quot;: &quot;.chapter-list li&quot;,
+  &quot;chapterName&quot;: &quot;a@text&quot;,
+  &quot;chapterResult&quot;: &quot;a@href&quot;,
+  &quot;contentItems&quot;: &quot;.content-img@data-src@js:\n({\n  url: result,\n  headers: {Referer: host},\n  transform: {\n    type: &#39;js&#39;,\n    handler: &#39;decodeImage&#39;,\n    args: {xorKey: 23}\n  }\n})&quot;
+}
+</code></pre>
+<p>这是示意算法。真实规则应将 <code>decodeImage</code> 替换为站点实际的纯字节变换。</p>
+<p>命名 JS 封面也直接引用同一 handler，例如：</p>
+<pre><code class="language-javascript">.cover@data-src@js:
+({
+  url: result,
+  headers: {Referer: host},
+  transform: {
+    type: &quot;js&quot;,
+    handler: &quot;decodeImage&quot;,
+    args: {xorKey: 23}
+  }
+})
+</code></pre>
+<p><code>decodeImage</code> 必须定义在 <code>loadJs</code> 中。收藏恢复时会重新执行 <code>loadJs</code>，但不会恢复搜索阶段临时创建的全局变量，所以必要参数必须放在 <code>args</code>。</p>
+<h2 id="示例六发现瀑布流">示例六：发现瀑布流</h2>
+<p><code>discoverUrl</code> 字段的内容：</p>
+<pre><code class="language-javascript">@js:
+({
+  url: `${host}/booklist?${params.join(&quot;&amp;&quot;)}`,
+  headers: {Referer: host}
+})
+@@DiscoverRule:
+{
+  &quot;rules&quot;: [
+    {
+      &quot;name&quot;: &quot;分类&quot;,
+      &quot;key&quot;: &quot;category&quot;,
+      &quot;option&quot;: &quot;全部&quot;,
+      &quot;value&quot;: &quot;0&quot;,
+      &quot;options&quot;: [
+        {&quot;option&quot;: &quot;全部&quot;, &quot;value&quot;: &quot;0&quot;},
+        {&quot;option&quot;: &quot;玄幻&quot;, &quot;value&quot;: &quot;1&quot;},
+        {&quot;option&quot;: &quot;都市&quot;, &quot;value&quot;: &quot;2&quot;}
+      ]
+    },
+    {
+      &quot;name&quot;: &quot;状态&quot;,
+      &quot;key&quot;: &quot;status&quot;,
+      &quot;option&quot;: &quot;全部&quot;,
+      &quot;value&quot;: &quot;0&quot;,
+      &quot;options&quot;: [
+        {&quot;option&quot;: &quot;全部&quot;, &quot;value&quot;: &quot;0&quot;},
+        {&quot;option&quot;: &quot;连载&quot;, &quot;value&quot;: &quot;1&quot;},
+        {&quot;option&quot;: &quot;完结&quot;, &quot;value&quot;: &quot;2&quot;}
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>在 JSON 中使用时，需要将换行和双引号正确转义；在应用的多行规则编辑器中可直接粘贴上述内容。</p>
+<h2 id="从简单到复杂的编写顺序">从简单到复杂的编写顺序</h2>
+<ol>
+<li>先只写 <code>host + searchUrl + searchList + searchName + searchResult</code>，确认列表成功。</li>
+<li>加上封面、作者、状态和简介。</li>
+<li>写目录三件套 <code>chapterList + chapterName + chapterResult</code>。</li>
+<li>写 <code>contentItems</code>，先保证单页正文成功。</li>
+<li>最后加分页、POST、GBK、JS、WebView 或图片变换。</li>
+</ol>
+<p>这样每次只引入一个新变量，出错时更容易判断是请求、列表还是字段规则的问题。</p>
+</article></div></main><footer class="site-footer"><div class="container footer-top"><a class="brand" href="../index.html"><img src="../assets/ikan-logo.png" alt="" width="35" height="35"><span>爱看 <small>ikan</small></span></a><p>连接你的兴趣，留住阅读的时间。</p><div><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a href="../index.html#download">软件下载</a></div></div><div class="container footer-bottom"><span>© <span data-year>2026</span> 爱看 ikan</span><span>内容由用户自行接入，请尊重版权并遵守当地法律。</span></div></footer>
+</body></html>

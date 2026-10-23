@@ -1,0 +1,216 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>地址与请求规则 · 爱看规则手册</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/ikan-logo.png"><script src="../app.js" defer></script></head><body><a class="skip-link" href="#main">跳到主要内容</a>
+<header class="site-header"><div class="container header-inner"><a class="brand" href="../index.html" aria-label="爱看首页"><img src="../assets/ikan-logo.png" alt="" width="40" height="40"><span>爱看 <small>ikan</small></span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation">菜单 <span aria-hidden="true">☰</span></button><nav id="navigation" aria-label="主导航"><a href="../index.html#features">功能</a><a href="../index.html#experience">界面一览</a><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a class="nav-download" href="../index.html#download">下载爱看 <span aria-hidden="true"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></span></a></nav></div></header>
+<main id="main"><div class="doc-hero"><div class="container"><p class="kicker">爱看 ikan · 规则手册</p><h1>地址与请求规则</h1><p>根据 ikan 项目当前文档整理，适合规则作者查阅。</p></div></div><div class="container doc-layout"><nav class="doc-toc" aria-label="手册导航"><a href="../rules.html">返回规则手册</a><a href="../guide.html">使用指南</a><a href="../docs/02-address-and-request.md" download>下载 Markdown 原文</a></nav><article class="doc-content"><h1 id="地址与请求规则">地址与请求规则</h1>
+<p>地址规则用在 <code>searchUrl</code>、<code>searchNextUrl</code>、<code>discoverNextUrl</code>、<code>chapterUrl</code>、<code>contentUrl</code> 和部分分页场景。它的任务不只是返回一个 URL，还可以描述 method、headers、body 和编码。</p>
+<h2 id="普通-url-模板">普通 URL 模板</h2>
+<p>最简单的地址就是字符串：</p>
+<pre><code class="language-text">/search?q=$keyword&amp;page=$page
+</code></pre>
+<p>支持的模板变量：</p>
+<table>
+<thead>
+<tr>
+<th>推荐写法</th>
+<th>兼容写法</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>$keyword</code></td>
+<td><code>${keyword}</code>、<code>{{key}}</code>、<code>searchKey</code></td>
+<td>搜索词</td>
+</tr>
+<tr>
+<td><code>$page</code></td>
+<td><code>${page}</code>、<code>{{page}}</code>、<code>searchPage</code></td>
+<td>当前页码，从 1 开始</td>
+</tr>
+<tr>
+<td><code>$pageSize</code></td>
+<td><code>${pageSize}</code></td>
+<td>页大小上下文，当前规则流通常为 20</td>
+</tr>
+<tr>
+<td><code>$result</code></td>
+<td><code>${result}</code></td>
+<td>上游结果，例如详情地址或章节地址</td>
+</tr>
+<tr>
+<td><code>$lastResult</code></td>
+<td><code>${lastResult}</code></td>
+<td>地址模板中与上游结果对应</td>
+</tr>
+<tr>
+<td><code>$host</code></td>
+<td><code>${host}</code>、<code>{{host}}</code></td>
+<td>规则 <code>host</code></td>
+</tr>
+<tr>
+<td><code>$baseUrl</code></td>
+<td><code>${baseUrl}</code></td>
+<td>当前页地址</td>
+</tr>
+</tbody></table>
+<p>模板只替换一次。如果 <code>keyword</code> 本身是字符串 <code>$page</code>，它不会再被当作页码变量继续替换。</p>
+<h3 id="相对-url">相对 URL</h3>
+<pre><code class="language-text">../page/2.html
+/book/123
+//cdn.example.com/cover.jpg
+</code></pre>
+<ul>
+<li><code>/book/123</code> 相对当前域名解析。</li>
+<li><code>../page/2.html</code> 相对当前页目录解析。</li>
+<li><code>//cdn...</code> 是协议相对地址，图片资源会按 HTTPS 归一化；页面地址建议直接写完整 <code>https://</code>。</li>
+</ul>
+<h2 id="结构化请求对象">结构化请求对象</h2>
+<p><strong>推荐</strong>在需要 POST、请求头或编码时返回对象：</p>
+<pre><code class="language-javascript">@js:
+(() =&gt; {
+  return {
+    url: &quot;/api/search&quot;,
+    method: &quot;post&quot;,
+    headers: {
+      &quot;Referer&quot;: host,
+      &quot;X-Requested-With&quot;: &quot;XMLHttpRequest&quot;
+    },
+    body: {
+      keyword: keyword,
+      page: page
+    },
+    requestEncoding: &quot;utf-8&quot;,
+    responseEncoding: &quot;utf-8&quot;
+  };
+})()
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>url</code></td>
+<td>String</td>
+<td>必填。可以是相对 URL。</td>
+</tr>
+<tr>
+<td><code>method</code></td>
+<td>String</td>
+<td>默认 <code>GET</code>，会转为大写。</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td>Object</td>
+<td>键值将转为字符串，header 名按不区分大小写处理。</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td>String/Object/List/JSON 标量</td>
+<td>请求体。字符串按文本发送，其他值作为 JSON 数据保存。</td>
+</tr>
+<tr>
+<td><code>requestEncoding</code></td>
+<td>String</td>
+<td>URL/请求体编码，支持 UTF-8 和 GBK 系列。</td>
+</tr>
+<tr>
+<td><code>encoding</code></td>
+<td>String</td>
+<td><strong>旧版兼容</strong>：<code>requestEncoding</code> 的别名，不等于响应解码。</td>
+</tr>
+<tr>
+<td><code>responseEncoding</code></td>
+<td>String</td>
+<td>强制响应文本解码，如 <code>gbk</code>。</td>
+</tr>
+<tr>
+<td><code>skip</code></td>
+<td>bool</td>
+<td><code>true</code> 表示显式跳过当前请求。</td>
+</tr>
+</tbody></table>
+<p>JavaScript 返回的 URL 字符串或对象不会再执行 <code>$page</code> / <code>${keyword}</code> 模板替换。在 JS 里应当直接用模板字符串计算：</p>
+<pre><code class="language-javascript">@js:`/search?q=${encodeURIComponent(keyword)}&amp;page=${page}`
+</code></pre>
+<h2 id="静态-json-请求对象">静态 JSON 请求对象</h2>
+<p>不用 JavaScript 也可以在地址字段中写 JSON 字符串：</p>
+<pre><code class="language-json">{
+  &quot;url&quot;: &quot;/api/search?q=${keyword}&quot;,
+  &quot;method&quot;: &quot;post&quot;,
+  &quot;headers&quot;: {&quot;Content-Type&quot;: &quot;application/json&quot;},
+  &quot;body&quot;: {&quot;keyword&quot;: &quot;${keyword}&quot;, &quot;page&quot;: &quot;${page}&quot;}
+}
+</code></pre>
+<p>静态 JSON 中的字符串会递归执行 legacy 模板替换；JS 返回对象不会。</p>
+<h2 id="跳过请求">跳过请求</h2>
+<p>以下返回值会创建“跳过请求”：</p>
+<pre><code class="language-javascript">@js:null
+</code></pre>
+<pre><code class="language-javascript">@js:({ skip: true })
+</code></pre>
+<pre><code class="language-javascript">@js:({ url: null })
+</code></pre>
+<p>空规则 <code>&quot;&quot;</code> 与返回 <code>null</code> 的含义不完全相同：字段留空通常表示使用流程默认地址；显式 <code>null</code> 表示不发送请求。</p>
+<h2 id="gbk-请求与响应">GBK 请求与响应</h2>
+<pre><code class="language-javascript">@js:
+({
+  url: `/search.php?key=${keyword}`,
+  method: &quot;post&quot;,
+  body: { searchkey: keyword },
+  requestEncoding: &quot;gbk&quot;,
+  responseEncoding: &quot;gbk&quot;
+})
+</code></pre>
+<ul>
+<li><code>requestEncoding: &quot;gbk&quot;</code> 用于中文 URL 参数和请求体编码。</li>
+<li>GBK 下的对象 body 会按 <code>application/x-www-form-urlencoded; charset=gbk</code> 发送。</li>
+<li><code>responseEncoding: &quot;gbk&quot;</code> 用于响应解码。不填时应用会依次参考 HTTP charset、HTML/XML charset 声明、UTF-8 有效性，最后尝试 GBK。</li>
+<li><strong>旧版 <code>encoding: &quot;gbk&quot;</code> 只映射为请求编码</strong>。如果响应也必须 GBK，请明确写 <code>responseEncoding</code>。</li>
+</ul>
+<h2 id="webview-模式">WebView 模式</h2>
+<p>规则顶层写：</p>
+<pre><code class="language-json">&quot;fetchMode&quot;: &quot;webview&quot;
+</code></pre>
+<p>此模式使用可视浏览器会话加载页面，返回渲染后 HTML，适合需要 JavaScript 渲染、登录 Cookie 或站点验证的 GET 页面。</p>
+<p>约束：</p>
+<ul>
+<li>只支持 GET 导航。</li>
+<li>不支持带 body 的请求。</li>
+<li>不会在 WebView 无法表达 POST 时偷偷回退到 HTTP，因为那会丢失已验证的浏览器会话。</li>
+<li>不要写 <code>@webview:</code>。当前地址评估器明确拒绝 <code>@webview:</code>、<code>@web:</code>、<code>@http:</code> 和 <code>@hetu:</code> 前缀。</li>
+</ul>
+<h2 id="cookie-与登录会话">Cookie 与登录会话</h2>
+<ul>
+<li>HTTP 响应中的 <code>Set-Cookie</code> 会进入规则会话。</li>
+<li>Cookie 按规则、域名、路径和 Secure 约束隔离，不会发送到无关域名。</li>
+<li>WebView 会话保留浏览器 Cookie 和验证状态。</li>
+<li>JS 中的 <code>http.*</code> 也经过同一受控请求层，不是独立的无状态网络库。</li>
+</ul>
+<h2 id="js-中发请求">JS 中发请求</h2>
+<pre><code class="language-javascript">const text = await http.get(&quot;/api/list&quot;);
+const posted = await http.post(&quot;/api/search&quot;, { q: keyword }, {
+  &quot;X-Requested-With&quot;: &quot;XMLHttpRequest&quot;
+});
+const response = await http.request({
+  url: &quot;/api/detail&quot;,
+  method: &quot;GET&quot;,
+  headers: { &quot;Referer&quot;: host },
+  encoding: &quot;gbk&quot;
+});
+</code></pre>
+<ul>
+<li><code>http(url)</code> / <code>http.get(...)</code> / <code>http.post(...)</code> / <code>http.put(...)</code> / <code>http.delete(...)</code> 返回响应文本。</li>
+<li><code>http.request(options)</code> 返回 <code>{status, url, headers, body, bytes}</code>。</li>
+<li><code>httpByte(url, headers)</code> 返回字节数组。普通规则尽量不用它自行处理图片，图片解密应使用 <a href="06-images-and-transforms.html">结构化图片变换</a>。</li>
+</ul>
+<h2 id="常见错误">常见错误</h2>
+<ul>
+<li><code>url</code> 没加引号：<code>var url = https://...</code> 不是合法 JS，应写 <code>var url = &quot;https://...&quot;</code>。</li>
+<li>把 Markdown 链接当 URL：<code>[https://a.com](https://a.com)</code> 不是合法 <code>host</code>，必须只保留 <code>https://a.com</code>。</li>
+<li>在 JS 里写 <code>$keyword</code>：JS 变量是 <code>keyword</code>，<code>$keyword</code> 只属于普通地址模板。</li>
+<li>把地址规则的 <code>@js:</code> 源码当 URL：这通常说明该字段没有进入地址评估流程，或误把页内选择器写到地址字段。</li>
+</ul>
+</article></div></main><footer class="site-footer"><div class="container footer-top"><a class="brand" href="../index.html"><img src="../assets/ikan-logo.png" alt="" width="35" height="35"><span>爱看 <small>ikan</small></span></a><p>连接你的兴趣，留住阅读的时间。</p><div><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a href="../index.html#download">软件下载</a></div></div><div class="container footer-bottom"><span>© <span data-year>2026</span> 爱看 ikan</span><span>内容由用户自行接入，请尊重版权并遵守当地法律。</span></div></footer>
+</body></html>

@@ -1,0 +1,336 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>图片请求、Base64/AES 解码与命名 JS · 爱看规则手册</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/ikan-logo.png"><script src="../app.js" defer></script></head><body><a class="skip-link" href="#main">跳到主要内容</a>
+<header class="site-header"><div class="container header-inner"><a class="brand" href="../index.html" aria-label="爱看首页"><img src="../assets/ikan-logo.png" alt="" width="40" height="40"><span>爱看 <small>ikan</small></span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation">菜单 <span aria-hidden="true">☰</span></button><nav id="navigation" aria-label="主导航"><a href="../index.html#features">功能</a><a href="../index.html#experience">界面一览</a><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a class="nav-download" href="../index.html#download">下载爱看 <span aria-hidden="true"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></span></a></nav></div></header>
+<main id="main"><div class="doc-hero"><div class="container"><p class="kicker">爱看 ikan · 规则手册</p><h1>图片请求、Base64/AES 解码与命名 JS</h1><p>根据 ikan 项目当前文档整理，适合规则作者查阅。</p></div></div><div class="container doc-layout"><nav class="doc-toc" aria-label="手册导航"><a href="../rules.html">返回规则手册</a><a href="../guide.html">使用指南</a><a href="../docs/06-images-and-transforms.md" download>下载 Markdown 原文</a></nav><article class="doc-content"><h1 id="图片请求base64aes-解码与命名-js">图片请求、Base64/AES 解码与命名 JS</h1>
+<p><code>discoverCover</code>、<code>searchCover</code>、<code>chapterCover</code> 和漫画 <code>contentItems</code> 使用同一套图片资源协议。它们可以返回普通图片 URL，也可以返回结构化图片资源。结构化资源将“图片地址”、“该图片独立请求头”和“下载后的字节变换”分开表达。</p>
+<h2 id="适用字段与结果数量">适用字段与结果数量</h2>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>结果用法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>discoverCover</code></td>
+<td>当前发现作品的第一个有效图片资源</td>
+</tr>
+<tr>
+<td><code>searchCover</code></td>
+<td>当前搜索作品的第一个有效图片资源</td>
+</tr>
+<tr>
+<td><code>chapterCover</code></td>
+<td>当前章节的第一个有效图片资源</td>
+</tr>
+<tr>
+<td>漫画 <code>contentItems</code></td>
+<td>全部图片资源，按规则返回顺序显示</td>
+</tr>
+</tbody></table>
+<p>四个字段都支持以下五种形式：</p>
+<ol>
+<li>普通 URL 字符串；</li>
+<li><code>{url, headers}</code>；</li>
+<li><code>{url, headers, transform: {type: &quot;base64&quot;, ...}}</code>；</li>
+<li><code>{url, headers, transform: {type: &quot;aes&quot;, ...}}</code>；</li>
+<li><code>{url, headers, transform: {type: &quot;js&quot;, handler, args}}</code>。</li>
+</ol>
+<p>链式规则（例如 <code>img@src@js:...</code>）会对每个选择器结果单独执行 JavaScript，因此其中的 <code>result</code> 是单个 URL。封面字段最终取第一个有效对象，漫画正文保留全部对象。</p>
+<h2 id="处理流程">处理流程</h2>
+<ol>
+<li>图片字段从当前作品节点、章节节点或正文响应提取图片 URL。</li>
+<li>将相对 URL 相对当前字段所在的响应页归一化。</li>
+<li>应用使用图片对象的 <code>headers</code> 下载原始字节。</li>
+<li>下载明确按 <strong>binary</strong> 处理，不进入 UTF-8/GBK 文本解码。</li>
+<li>执行 <code>transform</code>：无处理、原生 Base64、原生 AES 或命名 JS。</li>
+<li>将处理后字节作为图片解码并显示。</li>
+</ol>
+<p>这个顺序很重要。加密图片字节是随机二进制，如果在 AES 之前按 GBK 或 UTF-8 解码，会出现 <code>Bad GBK encoding 0x...</code> 或数据损坏。</p>
+<h2 id="处理结果缓存">处理结果缓存</h2>
+<p>带 <code>transform</code> 的图片首次显示时需要下载原始响应并执行 Base64、AES 或命名 JS 处理。处理成功后的最终图片字节会进入共享内存缓存和图片磁盘缓存，因此发现页、搜索页、详情页、章节封面与漫画阅读页可以复用同一结果，不会因为切换页面再次下载和解码。</p>
+<p>缓存键包含规则 ID、规则修改时间、<code>loadJs</code> 内容以及完整图片资源（URL、headers、transform 和 args）。修改规则或处理函数后会自动使用新缓存键。处理失败的结果不会缓存，点击重试仍会重新请求。应用中的“清理图片缓存”和“清理全部缓存”会同时清除这类最终图片缓存。</p>
+<h2 id="普通图片">普通图片</h2>
+<pre><code class="language-json">&quot;contentItems&quot;: &quot;.content-img@src&quot;
+</code></pre>
+<p>CSS 返回多个 <code>src</code> 时，<code>contentItems</code> 的最终结果是图片列表。</p>
+<p>封面的普通写法相同：</p>
+<pre><code class="language-json">&quot;discoverCover&quot;: &quot;.cover@src&quot;,
+&quot;searchCover&quot;: &quot;.cover@src&quot;,
+&quot;chapterCover&quot;: &quot;.chapter-cover@src&quot;
+</code></pre>
+<h2 id="图片独立请求头">图片独立请求头</h2>
+<p><strong>推荐：结构化对象</strong></p>
+<pre><code class="language-javascript">.manga-img@src@js:
+({
+  url: result,
+  headers: {
+    &quot;Referer&quot;: host,
+    &quot;User-Agent&quot;: &quot;Mozilla/5.0 ...&quot;
+  }
+})
+</code></pre>
+<p>链式 JS 对每个 <code>src</code> 分别执行，此时 <code>result</code> 是单个 URL。</p>
+<p>对象格式：</p>
+<pre><code class="language-javascript">{
+  url: &quot;https://img.example.com/1.webp&quot;,
+  headers: {
+    Referer: &quot;https://www.example.com/&quot;
+  }
+}
+</code></pre>
+<p><strong>旧版兼容：<code>@headers</code> 字符串后缀</strong></p>
+<pre><code class="language-javascript">img@src@js:
+result + &quot;@headers&quot; + JSON.stringify({
+  &quot;Referer&quot;: host,
+  &quot;User-Agent&quot;: &quot;Mozilla/5.0 ...&quot;
+})
+</code></pre>
+<p>新规则不建议再使用该字符串协议，因为对象更容易验证和扩展。</p>
+<p>同一对象可直接用于封面。例如搜索封面需要独立 Referer：</p>
+<pre><code class="language-javascript">.cover@data-src@js:
+({
+  url: result,
+  headers: { Referer: host }
+})
+</code></pre>
+<h2 id="原生-base64-解码推荐">原生 Base64 解码（推荐）</h2>
+<p>如果图片地址返回的响应体不是图片二进制，而是没有
+<code>data:image/...;base64,</code> 前缀的 Base64 文本，请使用原生 <code>base64</code>
+变换。它在 Dart 层直接解码，不启动 QJS，也不会跨 JS 桥传递整张图片：</p>
+<pre><code class="language-javascript">$.id@js:
+({
+  url: `https://c2.2thewash.com/comic/${result}/cover.jpg`,
+  headers: {
+    &quot;Referer&quot;: host
+  },
+  transform: {
+    type: &quot;base64&quot;,
+    outputMime: &quot;image/jpeg&quot;
+  }
+})
+</code></pre>
+<p>漫画正文使用相同写法：</p>
+<pre><code class="language-javascript">.content-img@data-r-src@js:
+({
+  url: result,
+  headers: { &quot;Referer&quot;: host },
+  transform: {
+    type: &quot;base64&quot;,
+    outputMime: &quot;image/jpeg&quot;
+  }
+})
+</code></pre>
+<p><code>base64</code> 变换会忽略响应文本中的空白字符，也接受完整的 Base64 data
+URL。<code>outputMime</code> 可省略，此时应用会优先读取 data URL 中的 MIME，再根据解码后的图片字节识别格式。</p>
+<p>不要再为这种资源编写 <code>decodeBase64Image</code> 命名 JS。命名 JS 适合自定义字节算法，单纯 Base64 解码使用它会产生明显的序列化和内存开销。</p>
+<h2 id="原生-aes-解密推荐">原生 AES 解密（推荐）</h2>
+<p>标准 AES-CBC/ECB 不需要 CryptoJS 和 <code>httpByte</code>。返回：</p>
+<pre><code class="language-javascript">.content-img@data-r-src@js:
+({
+  url: result,
+  headers: {
+    &quot;Referer&quot;: host,
+    &quot;User-Agent&quot;: &quot;Mozilla/5.0 ...&quot;
+  },
+  transform: {
+    type: &quot;aes&quot;,
+    mode: &quot;cbc&quot;,
+    key: &quot;my2ecret782ecret&quot;,
+    iv: &quot;my2ecret782ecret&quot;,
+    keyEncoding: &quot;utf8&quot;,
+    ivEncoding: &quot;utf8&quot;,
+    padding: &quot;pkcs7&quot;,
+    outputMime: &quot;image/webp&quot;
+  }
+})
+</code></pre>
+<h3 id="aes-参数">AES 参数</h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>允许值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>type</code></td>
+<td><code>aes</code></td>
+<td>必填</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td><code>cbc</code> / <code>ecb</code></td>
+<td>默认 <code>cbc</code></td>
+</tr>
+<tr>
+<td><code>key</code></td>
+<td>String</td>
+<td>必填，解码后必须为 16、24 或 32 字节</td>
+</tr>
+<tr>
+<td><code>iv</code></td>
+<td>String</td>
+<td>CBC 必填，解码后必须为 16 字节；ECB 可省略</td>
+</tr>
+<tr>
+<td><code>keyEncoding</code></td>
+<td><code>utf8</code> / <code>hex</code> / <code>base64</code></td>
+<td>默认 <code>utf8</code></td>
+</tr>
+<tr>
+<td><code>ivEncoding</code></td>
+<td><code>utf8</code> / <code>hex</code> / <code>base64</code></td>
+<td>默认跟随 <code>keyEncoding</code></td>
+</tr>
+<tr>
+<td><code>padding</code></td>
+<td><code>pkcs7</code> / <code>none</code></td>
+<td>默认 <code>pkcs7</code></td>
+</tr>
+<tr>
+<td><code>outputMime</code></td>
+<td>MIME String</td>
+<td>推荐明确写 <code>image/webp</code>、<code>image/jpeg</code> 或 <code>image/png</code></td>
+</tr>
+</tbody></table>
+<p>注意：</p>
+<ul>
+<li>密文长度必须是 AES block size（16 字节）的倍数。</li>
+<li><code>pkcs7</code> 会验证并删除末尾 padding；key/iv 错误常会表现为 padding 无效或解密后不是图片。</li>
+<li>不要把密文先转字符串，也不要让 JS 返回密文文本。</li>
+</ul>
+<h3 id="整段-js-生成图片对象列表">整段 JS 生成图片对象列表</h3>
+<pre><code class="language-javascript">@js:
+(async () =&gt; {
+  const urls = await css(result, &quot;.content-img@data-r-src&quot;);
+  return urls.map(url =&gt; ({
+    url,
+    headers: { Referer: host },
+    transform: {
+      type: &quot;aes&quot;,
+      mode: &quot;cbc&quot;,
+      key: &quot;my2ecret782ecret&quot;,
+      iv: &quot;my2ecret782ecret&quot;,
+      padding: &quot;pkcs7&quot;,
+      outputMime: &quot;image/webp&quot;
+    }
+  }));
+})()
+</code></pre>
+<h2 id="命名-javascript-图片变换">命名 JavaScript 图片变换</h2>
+<p>只在原生 AES 不能表达站点算法时使用，例如字节乱序、按版本切块、XOR 或多阶段处理。</p>
+<h3 id="1-在-loadjs-定义具名函数">1. 在 <code>loadJs</code> 定义具名函数</h3>
+<pre><code class="language-javascript">function decodeMangaImage(context) {
+  const bytes = new Uint8Array(context.bytes);
+  const key = context.args.xorKey;
+
+  for (let i = 0; i &lt; bytes.length; i++) {
+    bytes[i] = bytes[i] ^ key;
+  }
+
+  return {
+    bytes: Array.from(bytes),
+    mimeType: &quot;image/webp&quot;
+  };
+}
+</code></pre>
+<h3 id="2-图片字段引用函数名">2. 图片字段引用函数名</h3>
+<pre><code class="language-javascript">.content-img@data-src@js:
+({
+  url: result,
+  headers: { Referer: host },
+  transform: {
+    type: &quot;js&quot;,
+    handler: &quot;decodeMangaImage&quot;,
+    args: { xorKey: 23 }
+  }
+})
+</code></pre>
+<p><code>handler</code> 必须是合法 JavaScript 标识符，且必须能在 <code>globalThis</code> 上找到函数。不能把一整段 JS 源码写入 <code>handler</code>。</p>
+<p>同样的 <code>transform</code> 对象可以由 <code>discoverCover</code>、<code>searchCover</code> 或 <code>chapterCover</code> 返回，不需要另一套封面语法。</p>
+<h3 id="context-参数"><code>context</code> 参数</h3>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>context.url</code></td>
+<td>当前图片绝对 URL</td>
+</tr>
+<tr>
+<td><code>context.bytes</code></td>
+<td>应用已下载的原始字节数组</td>
+</tr>
+<tr>
+<td><code>context.response.status</code></td>
+<td>HTTP 状态码</td>
+</tr>
+<tr>
+<td><code>context.response.url</code></td>
+<td>最终响应 URL</td>
+</tr>
+<tr>
+<td><code>context.response.headers</code></td>
+<td>响应头对象</td>
+</tr>
+<tr>
+<td><code>context.response.mimeType</code></td>
+<td>响应 MIME，可能为 <code>null</code> 或不准确</td>
+</tr>
+<tr>
+<td><code>context.args</code></td>
+<td><code>transform.args</code> 中的 JSON 参数</td>
+</tr>
+</tbody></table>
+<p>函数可返回：</p>
+<ul>
+<li><code>Array&lt;number&gt;</code>，每个数必须在 0...255；</li>
+<li><code>Uint8Array</code>；</li>
+<li>data URL，例如 <code>data:image/webp;base64,...</code>；</li>
+<li><code>{bytes, mimeType}</code> 或 <code>{data, mimeType}</code>。</li>
+</ul>
+<p><strong>推荐返回 <code>{bytes: Array.from(bytes), mimeType: &quot;image/webp&quot;}</code>。</strong></p>
+<p>命名图片处理器不需要调用 <code>httpByte</code>。网络请求、请求头、二进制传输、失败重试和缓存都由应用处理。</p>
+<h3 id="会话与持久化约定">会话与持久化约定</h3>
+<ul>
+<li><code>handler</code> 必须定义在规则的 <code>loadJs</code> 中，不能只在某次搜索或发现的临时 JS 中定义。</li>
+<li>处理所需的动态配置必须写入 <code>transform.args</code>，不要依赖搜索/发现阶段临时写入的全局变量。</li>
+<li>图片命名 JS 使用图片专属会话，不复用发现、搜索、详情或正文解析会话；页面切换不会提前释放正在工作的图片会话。</li>
+<li>收藏会保存完整的 URL、headers 和 transform；旧收藏只有 URL 时仍可读取。</li>
+<li>重新创建会话后只保证 <code>loadJs</code> 中的 handler 和持久化的 <code>transform.args</code> 可用，不保证之前流程中的临时全局状态仍存在。</li>
+</ul>
+<h2 id="错误写法对照">错误写法对照</h2>
+<h3 id="在-contentitems-中拼二次-js字符串">在 <code>contentItems</code> 中拼“二次 JS”字符串</h3>
+<pre><code class="language-javascript">// 不推荐/不是结构化图片协议
+return `${url}@js:(async () =&gt; { ... })()`;
+</code></pre>
+<p>应改为 <code>{url, transform}</code> 对象。</p>
+<h3 id="误解-httpbyte-返回值">误解 <code>httpByte</code> 返回值</h3>
+<pre><code class="language-javascript">// 错误：httpByte 直接返回字节数组，不是 {bytes: ...}
+const res = await httpByte(result);
+const bytes = new Uint8Array(res.bytes);
+</code></pre>
+<pre><code class="language-javascript">// API 本身的正确类型，但图片变换仍建议用 transform
+const bytes = new Uint8Array(await httpByte(result));
+</code></pre>
+<h3 id="bad-gbk-encoding-0x"><code>Bad GBK encoding 0x...</code></h3>
+<p>这表示加密二进制被错误当作文本解码。结构化图片 <code>transform</code> 会强制使用 binary 响应，因此请确认：</p>
+<ul>
+<li><code>contentType</code> 是 <code>0</code> / <code>manga</code>；</li>
+<li><code>contentItems</code> 真正返回了 <code>{url, transform}</code>，而不是对象的字符串化结果；</li>
+<li>应用已重新编译/重启，使用了包含 binary 请求契约的新代码。</li>
+</ul>
+<h2 id="调试-aes-的建议顺序">调试 AES 的建议顺序</h2>
+<ol>
+<li>先保存一份服务器返回的原始密文文件。</li>
+<li>在桌面工具中用同一 key/iv/mode/padding 解密，确认能得到有效 PNG/JPEG/WebP。</li>
+<li>根据 key/iv 真实表示选择 <code>utf8</code>、<code>hex</code> 或 <code>base64</code>。</li>
+<li>检查图片请求是否需要 Referer/User-Agent/Cookie。</li>
+<li>最后再检查 <code>outputMime</code>。MIME 错误通常不会改变解密字节，但会影响解码和缓存。</li>
+</ol>
+</article></div></main><footer class="site-footer"><div class="container footer-top"><a class="brand" href="../index.html"><img src="../assets/ikan-logo.png" alt="" width="35" height="35"><span>爱看 <small>ikan</small></span></a><p>连接你的兴趣，留住阅读的时间。</p><div><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a href="../index.html#download">软件下载</a></div></div><div class="container footer-bottom"><span>© <span data-year>2026</span> 爱看 ikan</span><span>内容由用户自行接入，请尊重版权并遵守当地法律。</span></div></footer>
+</body></html>

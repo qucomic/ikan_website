@@ -1,0 +1,241 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>分页、上下文与会话 · 爱看规则手册</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/ikan-logo.png"><script src="../app.js" defer></script></head><body><a class="skip-link" href="#main">跳到主要内容</a>
+<header class="site-header"><div class="container header-inner"><a class="brand" href="../index.html" aria-label="爱看首页"><img src="../assets/ikan-logo.png" alt="" width="40" height="40"><span>爱看 <small>ikan</small></span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation">菜单 <span aria-hidden="true">☰</span></button><nav id="navigation" aria-label="主导航"><a href="../index.html#features">功能</a><a href="../index.html#experience">界面一览</a><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a class="nav-download" href="../index.html#download">下载爱看 <span aria-hidden="true"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></span></a></nav></div></header>
+<main id="main"><div class="doc-hero"><div class="container"><p class="kicker">爱看 ikan · 规则手册</p><h1>分页、上下文与会话</h1><p>根据 ikan 项目当前文档整理，适合规则作者查阅。</p></div></div><div class="container doc-layout"><nav class="doc-toc" aria-label="手册导航"><a href="../rules.html">返回规则手册</a><a href="../guide.html">使用指南</a><a href="../docs/05-pagination-and-session.md" download>下载 Markdown 原文</a></nav><article class="doc-content"><h1 id="分页上下文与会话">分页、上下文与会话</h1>
+<p>规则有四种不同分页：搜索分页、发现分页、章节目录分页和同一章正文分页。它们的输入、触发方式和停止条件不完全相同。</p>
+<h2 id="搜索分页">搜索分页</h2>
+<h3 id="方式一searchurl-自带-page">方式一：<code>searchUrl</code> 自带 <code>$page</code></h3>
+<pre><code class="language-json">&quot;searchUrl&quot;: &quot;/search?q=$keyword&amp;page=$page&quot;
+</code></pre>
+<p><code>searchNextUrl</code> 留空时，如果 <code>searchUrl</code> 含 <code>$page</code> 或 <code>searchPage</code>，引擎会在用户请求下一页时重新评估 <code>searchUrl</code>。</p>
+<h3 id="方式二从当前响应取下一页">方式二：从当前响应取下一页</h3>
+<pre><code class="language-json">&quot;searchNextUrl&quot;: &quot;a.next@href&quot;
+</code></pre>
+<p><code>searchNextUrl</code> 看起来像 CSS/XPath/JSONPath/JS 规则时，会对当前页响应解析。相对链接以当前搜索页为 <code>baseUrl</code> 解析：</p>
+<pre><code class="language-html">&lt;a class=&quot;next&quot; href=&quot;page-2.html&quot;&gt;下一页&lt;/a&gt;
+</code></pre>
+<p>当前页是 <code>https://example.com/search/index.html</code> 时，下一页为 <code>https://example.com/search/page-2.html</code>。</p>
+<p><code>searchNextUrl</code> 的 <code>@js:</code> 属于页内取值规则，应返回下一页 URL 字符串，不要返回请求对象。</p>
+<h3 id="方式三searchnexturl-是模板">方式三：<code>searchNextUrl</code> 是模板</h3>
+<pre><code class="language-json">&quot;searchNextUrl&quot;: &quot;/search?q=$keyword&amp;page=$page&quot;
+</code></pre>
+<p>当它不像选择器时，按地址模板执行。</p>
+<h2 id="发现分页">发现分页</h2>
+<p>发现分页与搜索分页类似：</p>
+<pre><code class="language-text">分类::全部::/list/$page
+</code></pre>
+<pre><code class="language-json">&quot;discoverNextUrl&quot;: &quot;.next@href&quot;
+</code></pre>
+<ul>
+<li><code>discoverNextUrl</code> 留空且当前分类 URL 含 <code>$page</code> / <code>searchPage</code> / <code>{{page}}</code> 时，下一页重新评估该分类 URL。</li>
+<li><code>discoverNextUrl</code> 是选择器时，从当前发现响应提取。</li>
+<li>结构化首页请求可以是 POST，后续页仍可以根据页内链接转为 GET。</li>
+<li><code>discoverNextUrl</code> 的 <code>@js:</code> 应返回 URL 字符串，不返回请求对象。</li>
+</ul>
+<h2 id="发现-js-分类">发现 <code>@js:</code> 分类</h2>
+<p><code>discoverUrl</code> 以 <code>@js:</code> 开头时，会先执行 JS，然后把返回值归一化为分类字符串列表，最后按 legacy <code>::</code> 解析：</p>
+<pre><code class="language-javascript">@js:
+(() =&gt; {
+  const categories = [
+    [&quot;玄幻&quot;, 1],
+    [&quot;都市&quot;, 2]
+  ];
+  return categories.map(item =&gt;
+    `分类::${item[0]}::/sort/${item[1]}_$page/`
+  ).join(&quot;\n&quot;);
+})()
+</code></pre>
+<p>允许返回：</p>
+<ul>
+<li>单个字符串；</li>
+<li>字符串/对象的嵌套列表；</li>
+<li>结构化请求对象（将保存为分类的请求值）；</li>
+<li><code>null</code> 表示无分类。</li>
+</ul>
+<p>错误的旧行为是在执行 JS 前就对源码按 <code>::</code> 拆分。当前分类器先检查 <code>@@DiscoverRule:</code>，再检查开头 <code>@js:</code>，最后才走 legacy 字符串。</p>
+<h2 id="新版发现瀑布流-discoverrule">新版发现瀑布流 <code>@@DiscoverRule:</code></h2>
+<p>用多行筛选器生成组合地址：</p>
+<pre><code class="language-javascript">@js:
+`${host}/booklist?${params.join(&quot;&amp;&quot;)}`
+@@DiscoverRule:
+{
+  &quot;rules&quot;: [
+    {
+      &quot;name&quot;: &quot;分类&quot;,
+      &quot;key&quot;: &quot;category&quot;,
+      &quot;option&quot;: &quot;全部&quot;,
+      &quot;value&quot;: &quot;0&quot;,
+      &quot;options&quot;: [
+        {&quot;option&quot;: &quot;全部&quot;, &quot;value&quot;: &quot;0&quot;},
+        {&quot;option&quot;: &quot;漫画&quot;, &quot;value&quot;: &quot;1&quot;}
+      ]
+    },
+    {
+      &quot;name&quot;: &quot;排序&quot;,
+      &quot;key&quot;: &quot;sort&quot;,
+      &quot;option&quot;: &quot;最新&quot;,
+      &quot;value&quot;: &quot;new&quot;,
+      &quot;options&quot;: [
+        {&quot;option&quot;: &quot;最新&quot;, &quot;value&quot;: &quot;new&quot;},
+        {&quot;option&quot;: &quot;热门&quot;, &quot;value&quot;: &quot;hot&quot;}
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>瀑布流地址表达式可使用：</p>
+<ul>
+<li><code>host</code>：规则域名；</li>
+<li><code>rules</code>：当前每一行选中的 <code>{name,key,option,value}</code>；</li>
+<li><code>values.筛选键</code>：按 <code>key</code> 读取该行当前选中的值，例如
+<code>values.area</code>、<code>values.year</code>；</li>
+<li><code>params</code>：形如 <code>key=value</code> 的参数列表。</li>
+</ul>
+<p>可返回 URL 字符串，也可返回带 <code>url</code> / <code>headers</code> 的请求对象。瀑布流配置 JSON 中 <code>rules</code> 也兼容别名 <code>list</code>。</p>
+<p>瀑布流表达式可以直接使用动态页码。应用会保留分页表达式，在实际发送请求时
+按当前页计算，因此 GET URL 和 POST body 都可以自动翻页：</p>
+<pre><code class="language-javascript">`${host}/booklist?category=${values.category}&amp;page=${page}`
+</code></pre>
+<p>支持以下分页写法：</p>
+<ul>
+<li><code>${page}</code>、<code>$page</code>、<code>{{page}}</code>、<code>searchPage</code>；</li>
+<li><code>${page - 1}</code>、<code>${page + 1}</code>；</li>
+<li><code>${page * 20}</code>、<code>${(page - 1) * 20}</code>；</li>
+<li>受限算术还支持整数、括号及 <code>+ - * / %</code>，不会执行任意 JavaScript。</li>
+</ul>
+<p>例如从 0 开始并使用偏移量的 POST JSON 接口：</p>
+<pre><code class="language-javascript">({
+  url: `${host}${group.api}`,
+  method: &quot;post&quot;,
+  headers: {&quot;Content-Type&quot;: &quot;application/json&quot;},
+  body: `{
+    &quot;channel&quot;: &quot;${group.channel}&quot;,
+    &quot;genre&quot;: &quot;${values.genre}&quot;,
+    &quot;page&quot;: ${page - 1},
+    &quot;offset&quot;: ${(page - 1) * 20},
+    &quot;limit&quot;: 20
+  }`
+})
+</code></pre>
+<p><code>discoverNextUrl</code> 留空时，只要组合请求中含分页表达式，应用就会复用当前
+分组和筛选组合生成下一页完整请求。若网站通过响应返回下一页链接，或下一页
+算法无法用页码表达式描述，再填写 <code>discoverNextUrl</code>；非空时它仍具有更高优先级。</p>
+<h3 id="分组组合筛选">分组组合筛选</h3>
+<p>当电影、电视剧、动漫等一级频道需要各自独立的组合筛选时，将顶层
+<code>rules</code> 改为 <code>groups</code>。每个分组拥有自己的 <code>rules</code>：</p>
+<pre><code class="language-javascript">@js:
+({
+  url: `${host}${group.path}?${params.join(&quot;&amp;&quot;)}`,
+  headers: {Referer: host}
+})
+@@DiscoverRule:
+{
+  &quot;groups&quot;: [
+    {
+      &quot;id&quot;: &quot;movie&quot;,
+      &quot;name&quot;: &quot;电影&quot;,
+      &quot;path&quot;: &quot;/vod/movie&quot;,
+      &quot;rules&quot;: [
+        {
+          &quot;name&quot;: &quot;题材&quot;,
+          &quot;key&quot;: &quot;genre&quot;,
+          &quot;value&quot;: &quot;all&quot;,
+          &quot;options&quot;: [
+            {&quot;option&quot;: &quot;全部&quot;, &quot;value&quot;: &quot;all&quot;},
+            {&quot;option&quot;: &quot;动作片&quot;, &quot;value&quot;: &quot;action&quot;},
+            {&quot;option&quot;: &quot;喜剧片&quot;, &quot;value&quot;: &quot;comedy&quot;}
+          ]
+        },
+        {
+          &quot;name&quot;: &quot;地区&quot;,
+          &quot;key&quot;: &quot;area&quot;,
+          &quot;value&quot;: &quot;all&quot;,
+          &quot;options&quot;: [
+            {&quot;option&quot;: &quot;全部&quot;, &quot;value&quot;: &quot;all&quot;},
+            {&quot;option&quot;: &quot;美国&quot;, &quot;value&quot;: &quot;usa&quot;},
+            {&quot;option&quot;: &quot;日本&quot;, &quot;value&quot;: &quot;japan&quot;}
+          ]
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;anime&quot;,
+      &quot;name&quot;: &quot;动漫&quot;,
+      &quot;path&quot;: &quot;/vod/anime&quot;,
+      &quot;rules&quot;: [
+        {
+          &quot;name&quot;: &quot;类型&quot;,
+          &quot;key&quot;: &quot;type&quot;,
+          &quot;value&quot;: &quot;all&quot;,
+          &quot;options&quot;: [
+            {&quot;option&quot;: &quot;全部&quot;, &quot;value&quot;: &quot;all&quot;},
+            {&quot;option&quot;: &quot;日漫&quot;, &quot;value&quot;: &quot;jp&quot;},
+            {&quot;option&quot;: &quot;国漫&quot;, &quot;value&quot;: &quot;cn&quot;}
+          ]
+        }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>分组表达式除 <code>host</code>、<code>rules</code>、<code>params</code> 外，还可使用：</p>
+<ul>
+<li><code>group.id</code>：当前一级频道的稳定标识；</li>
+<li><code>group.name</code>：当前一级频道显示名称；</li>
+<li><code>group.path</code>：示例中的频道路径；</li>
+<li><code>group.自定义字段</code>：分组对象中除 <code>rules</code> / <code>list</code> 外的字符串或数值字段。</li>
+</ul>
+<p>当网站使用固定位置参数而不是查询参数时，可通过 <code>values.筛选键</code> 将选中值
+放到对应位置：</p>
+<pre><code class="language-javascript">`${host}/vodshow/${values.type}-${values.area}-${values.sort}------${page}---${values.year}.html`
+</code></pre>
+<p>应用会在第一行显示一级频道，只显示当前频道的筛选行，并分别保留每个
+频道上次选中的组合。顶层 <code>rules</code> 的原有单组写法继续兼容。</p>
+<h2 id="章节目录分页">章节目录分页</h2>
+<pre><code class="language-json">&quot;chapterNextUrl&quot;: &quot;.right&gt;a@href&quot;
+</code></pre>
+<p>目录加载流程：</p>
+<ol>
+<li>请求第 1 页。</li>
+<li>立即解析并追加当前页章节。</li>
+<li>将已加载页数和当前章节列表通知 UI。</li>
+<li>用 <code>chapterNextUrl</code> 从当前页找下一页。</li>
+<li>只要下一页非空且未访问过，就继续。</li>
+</ol>
+<p><strong>章节目录没有固定 20 页上限</strong>。它通过已访问 URL 集合停止循环，并按章节 URL 去重。</p>
+<p><code>chapterNextUrl</code> 也可以是地址模板：</p>
+<pre><code class="language-json">&quot;chapterNextUrl&quot;: &quot;/book/$result/catalog/$page&quot;
+</code></pre>
+<p>但如果网站在最后一页仍对任意页码返回不同 URL 的重复内容，纯 <code>$page</code> 模板无法自动知道何时结束。优先使用页面真实“下一页”链接。</p>
+<h2 id="正文内部分页">正文内部分页</h2>
+<p>用于“一章被分成 1_2.html、1_3.html”的网站：</p>
+<pre><code class="language-json">&quot;contentNextUrl&quot;: &quot;@js:\n(() =&gt; {\n  const m = result.match(/href=\&quot;([^\&quot;]+)\&quot;[^&gt;]*&gt;下一页/);\n  return m ? m[1] : null;\n})()&quot;
+</code></pre>
+<p>此处 JS 的 <code>result</code> 是当前正文分页的 HTML，<code>baseUrl</code> 是当前分页地址，<code>page</code> 是即将请求的页码。</p>
+<p>当前实现的保护条件：</p>
+<ul>
+<li><code>contentNextUrl</code> 返回 <code>null</code> / 空字符串时停止；</li>
+<li>下一页 URL 与当前 URL 相同时停止；</li>
+<li>新页 <code>contentItems</code> 为空时停止；</li>
+<li><strong>同一章正文分页当前最多读取 20 页</strong>。这是正文分页的保护上限，不是章节目录分页上限。</li>
+</ul>
+<h2 id="分页循环检测">分页循环检测</h2>
+<p>搜索和发现流会记录请求签名，签名包括 method、URL 和 body。如果下一页产生完全相同的请求，会报 <code>paginationCycle</code>，而不是无限重试。</p>
+<p>目录分页使用已访问 URL 停止循环。所以分页规则必须真正产生新的下一页地址。</p>
+<h2 id="result-与-lastresult"><code>result</code> 与 <code>lastResult</code></h2>
+<p>理解原则：</p>
+<ul>
+<li><strong>地址规则</strong>：<code>result</code> 通常是上一阶段的 URL/结果。</li>
+<li><strong>解析规则</strong>：<code>result</code> 是当前响应、当前列表节点或链式上一步的单个值。</li>
+<li><code>lastResult</code> 保留上游流程结果，使当前规则即使把 <code>result</code> 换成 HTML/子节点，仍可获得上游地址。</li>
+</ul>
+<p>例如章节页可能同时包含“立即阅读”内容和下一级链接，<code>contentItems</code> 可以根据页面是否有内容选择当前 <code>result</code> 或 <code>lastResult</code>。</p>
+<h2 id="js-会话范围">JS 会话范围</h2>
+<ul>
+<li><code>loadJs</code> 在会话初始化时执行一次。</li>
+<li>每次规则执行前，保留全局变量会被刷新。</li>
+<li>一个作品的目录加载和正文加载可以共享显式作品流会话，因此目录 JS 设置的全局变量可供后续正文 JS 使用。</li>
+<li>不同规则和并发流程不共享全局对象。</li>
+<li>离开对应流程后会话会被销毁，不要用 JS 全局变量保存永久登录信息。登录 Session 应由 Cookie 会话管理。</li>
+</ul>
+</article></div></main><footer class="site-footer"><div class="container footer-top"><a class="brand" href="../index.html"><img src="../assets/ikan-logo.png" alt="" width="35" height="35"><span>爱看 <small>ikan</small></span></a><p>连接你的兴趣，留住阅读的时间。</p><div><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a href="../index.html#download">软件下载</a></div></div><div class="container footer-bottom"><span>© <span data-year>2026</span> 爱看 ikan</span><span>内容由用户自行接入，请尊重版权并遵守当地法律。</span></div></footer>
+</body></html>

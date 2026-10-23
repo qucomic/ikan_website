@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="规则使用 JSON 描述如何发起请求、提取内容与继续分页。按当前源码能力编写，让来源更容易维护。"><title>用规则，连接你的来源 · 爱看 ikan</title><link rel="icon" href="assets/ikan-logo.png"><link rel="stylesheet" href="styles.css"><script src="app.js" defer></script></head><body><a class="skip-link" href="#main">跳到主要内容</a>
+<header class="site-header"><div class="container header-inner"><a class="brand" href="index.html" aria-label="爱看首页"><img src="assets/ikan-logo.png" alt="" width="40" height="40"><span>爱看 <small>ikan</small></span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation">菜单 <span aria-hidden="true">☰</span></button><nav id="navigation" aria-label="主导航"><a href="index.html#features">功能</a><a href="index.html#experience">界面一览</a><a href="guide.html">使用指南</a><a href="rules.html">规则手册</a><a class="nav-download" href="index.html#download">下载爱看 <span aria-hidden="true"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></span></a></nav></div></header>
+<main id="main"><div class="doc-hero"><div class="container"><p class="kicker">爱看 ikan · 帮助中心</p><h1>用规则，连接你的来源</h1><p>规则使用 JSON 描述如何发起请求、提取内容与继续分页。按当前源码能力编写，让来源更容易维护。</p></div></div><div class="container doc-layout"><nav class="doc-toc" aria-label="文档目录"><a href="#flow">规则如何工作</a><a href="#example">最小小说规则</a><a href="#notes">编写时的注意事项</a><a href="#manual">完整字段与语法</a></nav><article class="doc-content">
+<section id="flow"><h2>规则如何工作</h2><ol><li>搜索或发现：请求列表页，提取作品名、作者和详情地址。</li><li>章节目录：请求详情页或目录地址，提取章节名和章节链接。</li><li>内容解析：请求章节页，取出文字、图片资源或播放地址。</li></ol><p><code>result</code>、<code>lastResult</code>、<code>baseUrl</code>、<code>host</code>、<code>keyword</code> 和 <code>page</code> 在各阶段之间传递数据。</p></section>
+<section id="example"><h2>最小小说规则</h2><p>下面仅展示规则结构。example.com 与选择器均为示例，需要按目标站点修改，不能作为可用来源直接导入。</p><pre><code>{
+  &quot;id&quot;: &quot;example-novel&quot;,
+  &quot;name&quot;: &quot;示例小说源&quot;,
+  &quot;host&quot;: &quot;https://www.example.com&quot;,
+  &quot;contentType&quot;: 1,
+  &quot;enableSearch&quot;: true,
+  &quot;searchUrl&quot;: &quot;/search?q=$keyword&amp;page=$page&quot;,
+  &quot;searchList&quot;: &quot;.book-item&quot;,
+  &quot;searchName&quot;: &quot;.title@text&quot;,
+  &quot;searchResult&quot;: &quot;a@href&quot;,
+  &quot;chapterList&quot;: &quot;.chapter-list li&quot;,
+  &quot;chapterName&quot;: &quot;a@text&quot;,
+  &quot;chapterResult&quot;: &quot;a@href&quot;,
+  &quot;contentItems&quot;: &quot;#content@text&quot;
+}</code></pre><p><code>contentType: 1</code> 表示小说，<code>0</code> 表示漫画。<code>id</code> 和 <code>name</code> 必须存在。</p></section>
+<section id="notes"><h2>编写时的注意事项</h2><ul><li>普通地址模板使用 <code>$keyword</code> / <code>$page</code>；JavaScript 中直接使用 <code>keyword</code> / <code>page</code>。</li><li><code>&amp;&amp;</code> 合并多个规则结果；<code>||</code> 按顺序取第一个非空结果。</li><li>地址以 <code>@js:</code> 开头时先执行 JavaScript，不会先按 <code>::</code> 拆分。</li><li><code>fetchMode: "webview"</code> 是规则级请求模式，不支持 <code>@webview:</code> 地址前缀。</li><li>相对 URL 基于当前页 <code>baseUrl</code> 解析，不必总是手动拼接 <code>host</code>。</li><li>加密图片请返回结构化图片对象与 <code>transform</code>；命名处理器定义在 <code>loadJs</code>。</li></ul></section>
+<section id="manual"><h2>完整字段与语法</h2><p>以下文档来自 ikan 项目当前规则手册，已生成为可直接阅读的静态网页。</p><div class="manual-list"><a href="manual/01-fields.html">字段字典 ↗</a><a href="manual/02-address-and-request.html">地址与请求规则 ↗</a><a href="manual/03-selectors-and-values.html">选择器与取值规则 ↗</a><a href="manual/04-javascript.html">JavaScript 规则 ↗</a><a href="manual/05-pagination-and-session.html">分页、上下文与会话 ↗</a><a href="manual/06-images-and-transforms.html">图片请求、AES 解密与命名 JS ↗</a><a href="manual/07-examples.html">完整规则示例 ↗</a><a href="manual/08-troubleshooting.html">常见错误与排查 ↗</a></div></section></article></div></main><footer class="site-footer"><div class="container footer-top"><a class="brand" href="index.html"><img src="assets/ikan-logo.png" alt="" width="35" height="35"><span>爱看 <small>ikan</small></span></a><p>连接你的兴趣，留住阅读的时间。</p><div><a href="guide.html">使用指南</a><a href="rules.html">规则手册</a><a href="index.html#download">软件下载</a></div></div><div class="container footer-bottom"><span>© <span data-year>2026</span> 爱看 ikan</span><span>内容由用户自行接入，请尊重版权并遵守当地法律。</span></div></footer>
+</body></html>

@@ -1,0 +1,407 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>规则字段字典 · 爱看规则手册</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/ikan-logo.png"><script src="../app.js" defer></script></head><body><a class="skip-link" href="#main">跳到主要内容</a>
+<header class="site-header"><div class="container header-inner"><a class="brand" href="../index.html" aria-label="爱看首页"><img src="../assets/ikan-logo.png" alt="" width="40" height="40"><span>爱看 <small>ikan</small></span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation">菜单 <span aria-hidden="true">☰</span></button><nav id="navigation" aria-label="主导航"><a href="../index.html#features">功能</a><a href="../index.html#experience">界面一览</a><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a class="nav-download" href="../index.html#download">下载爱看 <span aria-hidden="true"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></span></a></nav></div></header>
+<main id="main"><div class="doc-hero"><div class="container"><p class="kicker">爱看 ikan · 规则手册</p><h1>规则字段字典</h1><p>根据 ikan 项目当前文档整理，适合规则作者查阅。</p></div></div><div class="container doc-layout"><nav class="doc-toc" aria-label="手册导航"><a href="../rules.html">返回规则手册</a><a href="../guide.html">使用指南</a><a href="../docs/01-fields.md" download>下载 Markdown 原文</a></nav><article class="doc-content"><h1 id="规则字段字典">规则字段字典</h1>
+<p>本页按执行阶段列出当前 <code>Rule</code> 模型的字段。空字符串通常表示不启用该能力或使用上游默认值。</p>
+<h2 id="基本字段">基本字段</h2>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td>String</td>
+<td>规则唯一标识，必填。同 ID 导入时可能覆盖现有规则。</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>String</td>
+<td>规则显示名称，必填。</td>
+</tr>
+<tr>
+<td><code>author</code></td>
+<td>String</td>
+<td>规则作者。</td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td>String</td>
+<td>站点根地址，也是相对 URL 的基础之一。建议写完整 <code>https://...</code>。</td>
+</tr>
+<tr>
+<td><code>icon</code></td>
+<td>String</td>
+<td>规则图标 URL，可以是相对地址。</td>
+</tr>
+<tr>
+<td><code>group</code></td>
+<td>String</td>
+<td>规则分组。</td>
+</tr>
+<tr>
+<td><code>contentType</code></td>
+<td>int/String</td>
+<td>内容类型，见下表。</td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td>bool</td>
+<td>规则是否启用，默认 <code>true</code>。</td>
+</tr>
+<tr>
+<td><code>createTime</code></td>
+<td>int</td>
+<td>创建时间元数据。</td>
+</tr>
+<tr>
+<td><code>modifiedTime</code></td>
+<td>int</td>
+<td>修改时间元数据。</td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td>int</td>
+<td>首次导入时的默认顺序，沿用旧版语义：数值越大越靠前。导入后顺序由用户在规则管理页置顶或拖动调整，重复导入和订阅更新不会覆盖本地顺序。</td>
+</tr>
+<tr>
+<td><code>viewStyle</code></td>
+<td>int</td>
+<td>首次导入时的默认显示样式。用户在应用内调整后，重复导入和订阅更新不会覆盖本地选择。</td>
+</tr>
+<tr>
+<td><code>postScript</code></td>
+<td>String</td>
+<td>备注/兼容元数据；当前不作为主解析流程的后置脚本执行。</td>
+</tr>
+<tr>
+<td><code>subscriptionId</code></td>
+<td>String</td>
+<td>规则所属订阅的内部关联值。</td>
+</tr>
+<tr>
+<td><code>editProtection</code></td>
+<td>Object</td>
+<td>规则编辑保护信息，应由应用生成，不建议手写。</td>
+</tr>
+</tbody></table>
+<h3 id="contenttype"><code>contentType</code></h3>
+<table>
+<thead>
+<tr>
+<th>数字</th>
+<th>字符串</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0</code></td>
+<td><code>manga</code> / <code>漫画</code> / <code>图片</code></td>
+<td>漫画图片</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>novel</code> / <code>文字</code></td>
+<td>小说</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td><code>video</code> / <code>视频</code></td>
+<td>视频</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td><code>audio</code> / <code>音频</code></td>
+<td>音频</td>
+</tr>
+<tr>
+<td><code>4</code></td>
+<td><code>rss</code></td>
+<td>RSS</td>
+</tr>
+<tr>
+<td><code>5</code></td>
+<td><code>mixed</code> / <code>图文</code></td>
+<td>混合内容</td>
+</tr>
+</tbody></table>
+<h2 id="全局请求与-javascript">全局请求与 JavaScript</h2>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>userAgent</code></td>
+<td>该规则 HTTP 请求的 User-Agent。</td>
+</tr>
+<tr>
+<td><code>cookies</code></td>
+<td>规则预置 Cookie 字符串，同时作为 JS 的 <code>cookie</code> 全局变量。响应 Cookie 会按规则和域名维护会话。</td>
+</tr>
+<tr>
+<td><code>loginUrl</code></td>
+<td>登录入口地址。</td>
+</tr>
+<tr>
+<td><code>fetchMode</code></td>
+<td><code>http</code> 或 <code>webview</code>。<code>webview</code> 用浏览器会话获取渲染后 HTML，可保留验证/Cookie。</td>
+</tr>
+<tr>
+<td><code>useCryptoJS</code></td>
+<td>为 <code>true</code> 时预加载内置 CryptoJS。常见可执行字段中出现 <code>CryptoJS</code> 时也会自动检测，但新规则只要依赖 CryptoJS 就应明确设为 <code>true</code>。</td>
+</tr>
+<tr>
+<td><code>loadJs</code></td>
+<td>当规则会话初始化时执行一次的 JS，用于定义公共函数和常量。</td>
+</tr>
+</tbody></table>
+<p><code>fetchMode: webview</code> 当前只支持 GET 导航，不支持带 body 的 POST/PUT 请求。详见 <a href="02-address-and-request.html#webview-%E6%A8%A1%E5%BC%8F">WebView 模式</a>。</p>
+<h2 id="搜索字段">搜索字段</h2>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>enableSearch</code></td>
+<td>是否启用搜索，默认 <code>true</code>。</td>
+</tr>
+<tr>
+<td><code>searchUrl</code></td>
+<td>首页搜索地址规则，常用 <code>keyword</code> 和 <code>page</code>。</td>
+</tr>
+<tr>
+<td><code>searchNextUrl</code></td>
+<td>搜索下一页。可以是页面中的链接选择器，也可以是地址模板。</td>
+</tr>
+<tr>
+<td><code>searchList</code></td>
+<td>从搜索响应中取作品节点列表。</td>
+</tr>
+<tr>
+<td><code>searchName</code></td>
+<td>作品名称，必要。</td>
+</tr>
+<tr>
+<td><code>searchResult</code></td>
+<td>列表项结果地址，必要；默认是详情地址，桌面端直达内容模式下是内容入口。</td>
+</tr>
+<tr>
+<td><code>searchTags</code></td>
+<td>标签列表。</td>
+</tr>
+<tr>
+<td><code>searchCover</code></td>
+<td>搜索封面。可返回普通 URL、<code>URL + headers</code> 对象、原生 AES 或命名 JS 图片资源。</td>
+</tr>
+<tr>
+<td><code>searchAuthor</code></td>
+<td>作者。</td>
+</tr>
+<tr>
+<td><code>searchStatus</code></td>
+<td>连载/完结等状态。</td>
+</tr>
+<tr>
+<td><code>searchChapter</code></td>
+<td>最新章节名。</td>
+</tr>
+<tr>
+<td><code>searchDescription</code></td>
+<td>简介。</td>
+</tr>
+</tbody></table>
+<h2 id="发现字段">发现字段</h2>
+<p><code>discover*</code> 的取值规则与同名 <code>search*</code> 字段一致。</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>enableDiscover</code></td>
+<td>是否启用发现，默认 <code>true</code>。</td>
+</tr>
+<tr>
+<td><code>discoverUrl</code></td>
+<td>发现分类与地址规则，支持 legacy <code>::</code>、<code>@js:</code>、<code>@@DiscoverRule:</code> 单组组合筛选，以及 <code>@@DiscoverRule:</code> + <code>groups</code> 分组组合筛选。</td>
+</tr>
+<tr>
+<td><code>discoverNextUrl</code></td>
+<td>发现下一页链接选择器或地址模板。</td>
+</tr>
+<tr>
+<td><code>discoverList</code></td>
+<td>作品节点列表。</td>
+</tr>
+<tr>
+<td><code>discoverName</code></td>
+<td>作品名称，必要。</td>
+</tr>
+<tr>
+<td><code>discoverResult</code></td>
+<td>列表项结果地址，必要；默认是详情地址，桌面端直达内容模式下是内容入口。</td>
+</tr>
+<tr>
+<td><code>discoverTags</code></td>
+<td>标签列表。</td>
+</tr>
+<tr>
+<td><code>discoverCover</code></td>
+<td>发现封面。与 <code>searchCover</code> 使用同一图片资源协议。</td>
+</tr>
+<tr>
+<td><code>discoverAuthor</code></td>
+<td>作者。</td>
+</tr>
+<tr>
+<td><code>discoverStatus</code></td>
+<td>状态。</td>
+</tr>
+<tr>
+<td><code>discoverChapter</code></td>
+<td>最新章节名。</td>
+</tr>
+<tr>
+<td><code>discoverDescription</code></td>
+<td>简介。</td>
+</tr>
+</tbody></table>
+<p>桌面端的 <code>itemOpenMode</code> 决定搜索和发现列表项的去向：<code>detail</code>（默认）进入详情，<code>directContent</code> 直接进入阅读或播放。<code>directContent</code> 不请求 <code>chapterUrl</code>；视频结果本身是播放地址，且 <code>contentUrl</code>、<code>contentItems</code> 均留空时直接播放。需要从结果页解析播放地址时，仍配置 <code>contentUrl</code> 和 <code>contentItems</code>。移动端暂不使用此打开方式。</p>
+<h3 id="discoverurl-的-legacy-格式"><code>discoverUrl</code> 的 legacy 格式</h3>
+<pre><code class="language-text">频道::分类::URL
+</code></pre>
+<pre><code class="language-text">分类::全部::/list/$page
+分类::玄幻::/sort/1_$page/
+排行::总榜::/top/allvisit_$page/
+</code></pre>
+<p>两段格式 <code>频道::URL</code> 也可用，此时分类名默认为“全部”。多条用换行或 legacy <code>&amp;&amp;</code> 分隔。</p>
+<h2 id="目录字段">目录字段</h2>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>enableMultiRoads</code></td>
+<td>是否启用多线路目录。</td>
+</tr>
+<tr>
+<td><code>chapterUrl</code></td>
+<td>目录页地址。留空时直接使用作品详情地址。</td>
+</tr>
+<tr>
+<td><code>chapterNextUrl</code></td>
+<td>目录下一页选择器或地址模板。</td>
+</tr>
+<tr>
+<td><code>chapterList</code></td>
+<td>章节节点列表。</td>
+</tr>
+<tr>
+<td><code>chapterName</code></td>
+<td>章节名称，必要。</td>
+</tr>
+<tr>
+<td><code>chapterResult</code></td>
+<td>章节结果。可以返回地址、ID 或供 <code>contentUrl</code> 使用的结构化字符串；与 <code>chapterPayload</code> 至少填写一个。</td>
+</tr>
+<tr>
+<td><code>chapterPayload</code></td>
+<td>章节内嵌数据。用于目录响应已经包含正文、图片列表或播放信息的情况；与 <code>chapterResult</code> 至少填写一个。</td>
+</tr>
+<tr>
+<td><code>chapterLock</code></td>
+<td>章节锁定状态字符串。</td>
+</tr>
+<tr>
+<td><code>chapterRoads</code></td>
+<td>多线路节点列表。</td>
+</tr>
+<tr>
+<td><code>chapterRoadName</code></td>
+<td>当前线路名称。</td>
+</tr>
+<tr>
+<td><code>chapterCover</code></td>
+<td>章节封面。与搜索/发现封面、漫画正文图片使用同一图片资源协议。</td>
+</tr>
+<tr>
+<td><code>chapterTime</code></td>
+<td>保留/兼容字段；当前主目录映射不消费该值。</td>
+</tr>
+</tbody></table>
+<p>开启多线路时，先用 <code>chapterRoads</code> 得到每条线路，再在当前线路内执行 <code>chapterRoadName</code> 和章节规则。</p>
+<h2 id="正文字段">正文字段</h2>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>contentUrl</code></td>
+<td>正文请求地址。仅在 <code>chapterPayload</code> 没有有效结果时执行；留空则直接使用 <code>chapterResult</code>。返回 <code>null</code> 或 <code>{skip:true}</code> 可跳过请求。</td>
+</tr>
+<tr>
+<td><code>contentNextUrl</code></td>
+<td>正文内部下一页地址，用于同一章被分成多个网页的情况。</td>
+</tr>
+<tr>
+<td><code>contentItems</code></td>
+<td>小说返回文字列表，漫画返回图片 URL/图片对象，视频返回播放地址。</td>
+</tr>
+</tbody></table>
+<p>正文输入按以下顺序决定：</p>
+<ol>
+<li><code>chapterPayload</code> 有有效结果：跳过正文请求，以该结果作为 <code>contentItems</code> 的 <code>result</code>；</li>
+<li>否则 <code>contentUrl</code> 非空：执行正文请求；</li>
+<li>否则请求 <code>chapterResult</code>，保持旧规则兼容。</li>
+</ol>
+<h2 id="已废弃字段">已废弃字段</h2>
+<p>旧规则中的 <code>enableUpload</code>、<code>searchItems</code>、<code>discoverItems</code> 和
+<code>chapterItems</code> 会在导入时被静默忽略，新规则导出时也不会包含这些键。
+请分别使用 <code>searchList</code>、<code>discoverList</code> 和 <code>chapterList</code> 描述节点列表。</p>
+<p>内嵌正文示例：</p>
+<pre><code class="language-json">{
+  &quot;chapterList&quot;: &quot;$.chapters.*&quot;,
+  &quot;chapterName&quot;: &quot;$.title&quot;,
+  &quot;chapterResult&quot;: &quot;$.id&quot;,
+  &quot;chapterPayload&quot;: &quot;$.payload&quot;,
+  &quot;contentItems&quot;: &quot;$.content&quot;
+}
+</code></pre>
+<p>正文阶段的变量约定：<code>result</code> 是 <code>chapterPayload</code> 的结果，<code>lastResult</code> 是
+<code>chapterResult</code>，<code>baseUrl</code> 是产生该章节的目录页地址。<code>chapterPayload</code> 只提供解析输入，
+不会覆盖或改写 <code>contentItems</code> 规则。</p>
+<p>当 <code>chapterResult</code> 为空而 <code>chapterPayload</code> 有值时，应用会使用 payload 的稳定字符串作为
+兼容章节结果，因此正文阶段的 <code>lastResult</code> 也可读取该字符串。建议 payload 很大时仍额外
+提供一个简短、稳定且唯一的 <code>chapterResult</code>，便于阅读记录和缓存索引。</p>
+<p><code>searchCover</code>、<code>discoverCover</code>、<code>chapterCover</code> 和漫画 <code>contentItems</code> 的图片对象格式完全一致，均支持：</p>
+<ul>
+<li>普通 URL；</li>
+<li><code>{url, headers}</code> 独立请求头；</li>
+<li><code>{url, headers, transform: {type: &quot;aes&quot;, ...}}</code> 原生 AES；</li>
+<li><code>{url, headers, transform: {type: &quot;js&quot;, handler, args}}</code> 命名 JS。</li>
+</ul>
+<p>封面字段只取规则结果中的第一个有效图片资源；漫画 <code>contentItems</code> 则保留全部图片资源及顺序。完整格式见 <a href="06-images-and-transforms.html">图片请求、AES 解密与命名 JS</a>。</p>
+<h2 id="字段继承要点">字段继承要点</h2>
+<ul>
+<li><code>chapterUrl == &quot;&quot;</code> 不是错误：目录默认继承作品详情地址。</li>
+<li><code>contentUrl == &quot;&quot;</code> 不是错误：正文默认继承章节地址。</li>
+<li>地址规则中的 <code>result</code> 指当前流程的上游地址；取值规则中的 <code>result</code> 指当前响应或当前选中值。</li>
+</ul>
+</article></div></main><footer class="site-footer"><div class="container footer-top"><a class="brand" href="../index.html"><img src="../assets/ikan-logo.png" alt="" width="35" height="35"><span>爱看 <small>ikan</small></span></a><p>连接你的兴趣，留住阅读的时间。</p><div><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a href="../index.html#download">软件下载</a></div></div><div class="container footer-bottom"><span>© <span data-year>2026</span> 爱看 ikan</span><span>内容由用户自行接入，请尊重版权并遵守当地法律。</span></div></footer>
+</body></html>

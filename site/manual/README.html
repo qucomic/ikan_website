@@ -1,0 +1,101 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>规则手册总览 · 爱看规则手册</title><link rel="stylesheet" href="../styles.css"><link rel="icon" href="../assets/ikan-logo.png"><script src="../app.js" defer></script></head><body><a class="skip-link" href="#main">跳到主要内容</a>
+<header class="site-header"><div class="container header-inner"><a class="brand" href="../index.html" aria-label="爱看首页"><img src="../assets/ikan-logo.png" alt="" width="40" height="40"><span>爱看 <small>ikan</small></span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation">菜单 <span aria-hidden="true">☰</span></button><nav id="navigation" aria-label="主导航"><a href="../index.html#features">功能</a><a href="../index.html#experience">界面一览</a><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a class="nav-download" href="../index.html#download">下载爱看 <span aria-hidden="true"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></span></a></nav></div></header>
+<main id="main"><div class="doc-hero"><div class="container"><p class="kicker">爱看 ikan · 规则手册</p><h1>规则手册总览</h1><p>根据 ikan 项目当前文档整理，适合规则作者查阅。</p></div></div><div class="container doc-layout"><nav class="doc-toc" aria-label="手册导航"><a href="../rules.html">返回规则手册</a><a href="../guide.html">使用指南</a><a href="../docs/README.md" download>下载 Markdown 原文</a></nav><article class="doc-content"><h1 id="规则手册总览">规则手册总览</h1>
+<p>规则是一个 JSON 对象。它不保存内容，而是保存获取内容的方法：地址、请求方式、列表节点、字段选择器、分页链接和必要的 JavaScript。</p>
+<h2 id="从页面到内容的四个阶段">从页面到内容的四个阶段</h2>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>地址字段</th>
+<th>列表字段</th>
+<th>关键输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>搜索</td>
+<td><code>searchUrl</code></td>
+<td><code>searchList</code></td>
+<td><code>searchName</code> + <code>searchResult</code></td>
+</tr>
+<tr>
+<td>发现</td>
+<td><code>discoverUrl</code></td>
+<td><code>discoverList</code></td>
+<td><code>discoverName</code> + <code>discoverResult</code></td>
+</tr>
+<tr>
+<td>目录</td>
+<td><code>chapterUrl</code></td>
+<td><code>chapterList</code></td>
+<td><code>chapterName</code> + <code>chapterResult</code></td>
+</tr>
+<tr>
+<td>正文</td>
+<td><code>contentUrl</code></td>
+<td>无单独列表字段</td>
+<td><code>contentItems</code></td>
+</tr>
+</tbody></table>
+<p>前一阶段的结果会成为后一阶段的输入：</p>
+<ul>
+<li>搜索/发现的 <code>*Result</code> 是作品详情地址。</li>
+<li>目录阶段可在 <code>chapterUrl</code> 中使用该地址；<code>chapterUrl</code> 留空则直接请求它。</li>
+<li><code>chapterResult</code> 是每个章节节点解析出的章节结果，可以是地址、ID 或供 <code>contentUrl</code> 使用的结构化字符串。</li>
+<li><code>chapterPayload</code> 可从当前章节节点提取已经随目录响应返回的正文原始数据。</li>
+<li><code>chapterPayload</code> 有有效结果时不发送正文请求，<code>contentItems</code> 直接解析该结果；否则正文阶段使用 <code>contentUrl</code>，其留空时请求 <code>chapterResult</code>。</li>
+</ul>
+<h2 id="三类规则表达式">三类规则表达式</h2>
+<h3 id="1-地址规则">1. 地址规则</h3>
+<p>用在 <code>searchUrl</code>、<code>chapterUrl</code>、<code>contentUrl</code> 等字段，返回 URL、请求对象或跳过请求。</p>
+<pre><code class="language-text">/search?q=$keyword&amp;page=$page
+</code></pre>
+<pre><code class="language-javascript">@js:
+({
+  url: &quot;/search&quot;,
+  method: &quot;post&quot;,
+  body: { q: keyword, page },
+  headers: { &quot;X-Client&quot;: &quot;ikan&quot; }
+})
+</code></pre>
+<p>详见 <a href="02-address-and-request.html">地址与请求规则</a>。</p>
+<h3 id="2-取元素规则">2. 取元素规则</h3>
+<p>用在 <code>searchList</code>、<code>discoverList</code>、<code>chapterList</code> 等列表字段，返回元素或 JSON 节点列表。</p>
+<pre><code class="language-text">.book-list &gt; li
+//ul[@id=&quot;chapter-list&quot;]/li
+$.data.items[*]
+</code></pre>
+<h3 id="3-取值规则">3. 取值规则</h3>
+<p>用在 <code>searchName</code>、<code>chapterResult</code>、<code>contentItems</code> 等字段，返回文字、属性、HTML、URL、列表或结构化对象。</p>
+<pre><code class="language-text">.title@text
+a@href
+#content@html
+$.data.name
+</code></pre>
+<p>详见 <a href="03-selectors-and-values.html">选择器与取值</a>。</p>
+<h2 id="选择器是相对谁执行的">选择器是相对谁执行的</h2>
+<ul>
+<li><code>searchList</code> / <code>discoverList</code> / <code>chapterList</code> 相对整个响应执行。</li>
+<li><code>searchName</code>、<code>searchAuthor</code>、<code>searchResult</code> 等相对当前 <code>searchList</code> 元素执行。</li>
+<li><code>discover*</code> 字段相对当前 <code>discoverList</code> 元素执行。</li>
+<li><code>chapterName</code>、<code>chapterResult</code>、<code>chapterPayload</code>、<code>chapterLock</code> 相对当前 <code>chapterList</code> 元素执行；<code>chapterResult</code> 与 <code>chapterPayload</code> 至少填写一个。</li>
+<li><code>contentItems</code> 相对正文请求响应执行；存在 <code>chapterPayload</code> 时则相对其结果执行。</li>
+<li>选择器后链式的 <code>@js:</code> 相对前一阶段返回的每个值分别执行。</li>
+</ul>
+<h2 id="学习路线">学习路线</h2>
+<ul>
+<li>刚开始写规则：<a href="01-fields.html">字段字典</a> → <a href="03-selectors-and-values.html">选择器</a> → <a href="07-examples.html">完整示例</a>。</li>
+<li>需要 POST、请求头或 GBK：<a href="02-address-and-request.html">地址与请求</a>。</li>
+<li>需要计算、解密或 API 组装：<a href="04-javascript.html">JavaScript 规则</a>。</li>
+<li>搜索/目录/正文有下一页：<a href="05-pagination-and-session.html">分页与会话</a>。</li>
+<li>漫画图片需要 Referer 或 AES 解密：<a href="06-images-and-transforms.html">图片与变换</a>。</li>
+<li>已经出错：<a href="08-troubleshooting.html">常见错误与排查</a>。</li>
+</ul>
+<h2 id="推荐写法与兼容写法">推荐写法与兼容写法</h2>
+<p>文档使用两种标记：</p>
+<ul>
+<li><strong>推荐</strong>：当前类型化规则引擎的清晰写法，例如结构化请求对象、结构化图片对象。</li>
+<li><strong>旧版兼容</strong>：为导入 ESO/Ikan 旧规则保留的写法，例如 <code>@headers{...}</code> 图片后缀、<code>searchKey</code>、<code>searchPage</code>。新规则可以使用，但不建议继续扩展这类字符串协议。</li>
+</ul>
+</article></div></main><footer class="site-footer"><div class="container footer-top"><a class="brand" href="../index.html"><img src="../assets/ikan-logo.png" alt="" width="35" height="35"><span>爱看 <small>ikan</small></span></a><p>连接你的兴趣，留住阅读的时间。</p><div><a href="../guide.html">使用指南</a><a href="../rules.html">规则手册</a><a href="../index.html#download">软件下载</a></div></div><div class="container footer-bottom"><span>© <span data-year>2026</span> 爱看 ikan</span><span>内容由用户自行接入，请尊重版权并遵守当地法律。</span></div></footer>
+</body></html>
